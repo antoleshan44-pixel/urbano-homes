@@ -1,0 +1,43 @@
+﻿spring:
+  application:
+    name: auth-service
+  datasource:
+    url: jdbc:h2:mem:urbano_homes;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        show_sql: true
+        format_sql: true
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  flyway:
+    enabled: false
+  security:
+    basic:
+      enabled: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+server:
+  port: 8081
+
+logging:
+  level:
+    com.urbano: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.springframework.security: DEBUG

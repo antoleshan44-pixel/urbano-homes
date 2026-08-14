@@ -1,0 +1,41 @@
+﻿server:
+  port: 8080
+
+spring:
+  application:
+    name: gateway
+  cloud:
+    gateway:
+      routes:
+        - id: auth
+          uri: http://auth-service:8081
+          predicates:
+            - Path=/api/auth/**
+        - id: property
+          uri: http://property-service:8082
+          predicates:
+            - Path=/api/properties/**,/api/units/**
+        - id: listing
+          uri: http://listing-service:8083
+          predicates:
+            - Path=/api/public/listings/**
+        - id: tenant
+          uri: http://tenant-service:8084
+          predicates:
+            - Path=/api/tenants/**,/api/leases/**
+        - id: payment
+          uri: http://payment-service:8085
+          predicates:
+            - Path=/api/payments/**
+        - id: maintenance
+          uri: http://maintenance-service:8086
+          predicates:
+            - Path=/api/maintenance/**
+        - id: crm
+          uri: http://crm-service:8087
+          predicates:
+            - Path=/api/crm/**
+
+logging:
+  level:
+    com.urbano.gateway: DEBUG
