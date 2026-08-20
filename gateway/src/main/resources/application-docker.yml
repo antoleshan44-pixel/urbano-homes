@@ -1,0 +1,77 @@
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: auth-public
+          uri: http://auth-service:8081
+          predicates:
+            - Path=/api/auth/login,/api/auth/register,/api/auth/refresh
+          filters:
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@ipKeyResolver}"
+                redis-rate-limiter.replenishRate: 20
+                redis-rate-limiter.burstCapacity: 30
+        - id: auth
+          uri: http://auth-service:8081
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - name: JwtAuthenticationFilter
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                redis-rate-limiter.replenishRate: 100
+                redis-rate-limiter.burstCapacity: 200
+        - id: property
+          uri: http://property-service:8082
+          predicates:
+            - Path=/api/properties/**,/api/units/**
+          filters:
+            - name: JwtAuthenticationFilter
+            - name: AdminBypassFilter
+        - id: listing
+          uri: http://listing-service:8083
+          predicates:
+            - Path=/api/public/listings/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@ipKeyResolver}"
+                redis-rate-limiter.replenishRate: 30
+                redis-rate-limiter.burstCapacity: 50
+        - id: tenant
+          uri: http://tenant-service:8084
+          predicates:
+            - Path=/api/tenants/**,/api/leases/**
+          filters:
+            - name: JwtAuthenticationFilter
+        - id: payment-callback
+          uri: http://payment-service:8085
+          predicates:
+            - Path=/api/payments/callback
+          filters:
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@ipKeyResolver}"
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+        - id: payment
+          uri: http://payment-service:8085
+          predicates:
+            - Path=/api/payments/**
+          filters:
+            - name: JwtAuthenticationFilter
+        - id: maintenance
+          uri: http://maintenance-service:8086
+          predicates:
+            - Path=/api/maintenance/**
+            - Path=/api/tenants/*/maintenance/**
+          filters:
+            - name: JwtAuthenticationFilter
+        - id: crm
+          uri: http://crm-service:8087
+          predicates:
+            - Path=/api/crm/**
+          filters:
+            - name: JwtAuthenticationFilter

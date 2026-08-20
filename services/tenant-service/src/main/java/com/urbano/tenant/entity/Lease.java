@@ -2,9 +2,14 @@ package com.urbano.tenant.entity;
 
 import com.urbano.common.enums.LeaseStatus;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -12,41 +17,54 @@ import java.util.UUID;
 @Entity
 @Table(name = "leases")
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@EntityListeners(AuditingEntityListener.class)
 public class Lease {
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "tenant_id", nullable = false)
+    @Column(nullable = false)
     private UUID tenantId;
 
-    @Column(name = "unit_id", nullable = false)
+    @Column(nullable = false)
+    private UUID propertyId;
+
+    @Column(nullable = false)
     private UUID unitId;
 
-    @Column(name = "pm_account_id", nullable = false)
-    private UUID pmAccountId;
-
-    @Column(name = "start_date", nullable = false)
+    @Column(nullable = false)
     private LocalDate startDate;
 
-    @Column(name = "end_date", nullable = false)
+    @Column(nullable = false)
     private LocalDate endDate;
 
-    @Column(name = "rent_amount", precision = 19, scale = 2, nullable = false)
-    private BigDecimal rentAmount;
+    @Column(nullable = false)
+    private Double rentAmount;
+
+    private String currency;
+
+    private Double securityDeposit;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private LeaseStatus status = LeaseStatus.ACTIVE;
+    private LeaseStatus status;
 
-    private String notes;
+    private LocalDateTime signedAt;
 
-    @Column(name = "created_at")
+    private LocalDateTime terminatedAt;
+
+    @CreatedDate
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
+    @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tenant_id", insertable = false, updatable = false)
+    private Tenant tenant;
 }

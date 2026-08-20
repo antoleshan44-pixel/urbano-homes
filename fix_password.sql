@@ -1,0 +1,1 @@
+﻿UPDATE auth_users SET password_hash = '$2a$10$.FqJT1LfD1zdG3VRiphKGubDsQSWAdoT8ZECY.k1ZZMipmT7iv3n2' WHERE email = 'test@urbano.co.ke';

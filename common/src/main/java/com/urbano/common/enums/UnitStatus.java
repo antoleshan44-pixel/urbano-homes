@@ -1,8 +1,11 @@
 package com.urbano.common.enums;
 
 public enum UnitStatus {
-    VACANT,
+    AVAILABLE,
     OCCUPIED,
-    UNDER_MAINTENANCE,
-    DRAFT
+    PENDING,
+    MAINTENANCE,
+    INACTIVE,
+    RENTED,
+    RESERVED
 }

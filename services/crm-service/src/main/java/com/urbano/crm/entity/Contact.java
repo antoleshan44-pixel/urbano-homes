@@ -1,49 +1,77 @@
 package com.urbano.crm.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "crm_contacts")
+@Table(name = "contacts")
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@EntityListeners(AuditingEntityListener.class)
 public class Contact {
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "pm_account_id", nullable = false)
-    private UUID pmAccountId;
-
-    @Column(name = "first_name", nullable = false)
+    @Column(nullable = false)
     private String firstName;
 
-    @Column(name = "last_name", nullable = false)
+    @Column(nullable = false)
     private String lastName;
 
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(unique = true, nullable = false)
     private String phone;
 
+    private String mobile;
+
     @Column(nullable = false)
-    private String type;
+    private String type; // TENANT, PROPERTY_OWNER, VENDOR, EMPLOYEE, PROSPECT
 
     private String company;
 
-    @Column(name = "created_at")
+    private String position;
+
+    private String address;
+
+    private String city;
+
+    private String state;
+
+    private String zipCode;
+
+    private String country;
+
+    private String preferredContactMethod; // EMAIL, PHONE, SMS, NONE
+
+    @Column(columnDefinition = "TEXT")
+    private String notes;
+
+    private UUID assignedTo;
+
+    private boolean isActive;
+
+    private LocalDateTime lastContactDate;
+
+    private String source; // WEBSITE, REFERRAL, SOCIAL_MEDIA, OTHER
+
+    @CreatedDate
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
+    @LastModifiedDate
     private LocalDateTime updatedAt;
-
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
-
-    public String getFullName() {
-        return firstName + " " + lastName;
-    }
 }

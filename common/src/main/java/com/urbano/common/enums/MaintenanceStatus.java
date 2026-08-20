@@ -1,7 +1,11 @@
 package com.urbano.common.enums;
 
 public enum MaintenanceStatus {
-    SUBMITTED,
+    OPEN,
     IN_PROGRESS,
-    RESOLVED
+    COMPLETED,
+    CANCELLED,
+    PENDING_PARTS,
+    RESOLVED,
+    CLOSED
 }

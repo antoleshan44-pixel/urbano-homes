@@ -1,0 +1,31 @@
+﻿server:
+  port: 8090
+
+spring:
+  application:
+    name: audit-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:urbano_homes}
+    username: ${DB_USER:urbano}
+    password: ${DB_PASSWORD:urbano_dev_password}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+logging:
+  level:
+    com.urbano: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics

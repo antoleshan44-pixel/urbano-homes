@@ -1,0 +1,13 @@
+﻿spring.application.name=listing-service
+server.port=8083
+
+spring.datasource.url=jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:urbano_homes}
+spring.datasource.username=${DB_USER:urbano}
+spring.datasource.password=${DB_PASSWORD:urbano_dev_password}
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+spring.jpa.hibernate.ddl-auto=validate
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+spring.jpa.properties.hibernate.format_sql=true
+
+logging.level.com.urbano=DEBUG

@@ -1,0 +1,109 @@
+package com.urbano.common.storage;
+
+import com.urbano.common.properties.StorageProperties;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
+
+import java.net.URI;
+import java.time.Duration;
+import java.util.UUID;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class PhotoStorageService {
+
+    private final StorageProperties storageProperties;
+
+    private S3Client getS3Client() {
+        return S3Client.builder()
+                .endpointOverride(URI.create(storageProperties.getEndpoint()))
+                .region(Region.of(storageProperties.getRegion()))
+                .credentialsProvider(StaticCredentialsProvider.create(
+                        AwsBasicCredentials.create(
+                                storageProperties.getAccessKey(),
+                                storageProperties.getSecretKey()
+                        )
+                ))
+                .build();
+    }
+
+    private S3Presigner getPresigner() {
+        return S3Presigner.builder()
+                .endpointOverride(URI.create(storageProperties.getEndpoint()))
+                .region(Region.of(storageProperties.getRegion()))
+                .credentialsProvider(StaticCredentialsProvider.create(
+                        AwsBasicCredentials.create(
+                                storageProperties.getAccessKey(),
+                                storageProperties.getSecretKey()
+                        )
+                ))
+                .build();
+    }
+
+    public String generatePresignedUploadUrl(String keyPrefix, String fileName) {
+        String key = keyPrefix + "/" + UUID.randomUUID() + "-" + fileName;
+
+        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                .bucket(storageProperties.getBucket())
+                .key(key)
+                .contentType("image/jpeg")
+                .build();
+
+        PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
+                .signatureDuration(Duration.ofSeconds(storageProperties.getPresignedUrlExpiry()))
+                .putObjectRequest(putObjectRequest)
+                .build();
+
+        PresignedPutObjectRequest presignedRequest = getPresigner()
+                .presignPutObject(presignRequest);
+
+        log.info("Generated presigned URL for key: {}", key);
+
+        return presignedRequest.url().toString();
+    }
+
+    public String generatePublicUrl(String key) {
+        return storageProperties.getEndpoint() + "/" + storageProperties.getBucket() + "/" + key;
+    }
+
+    public void uploadFile(String key, byte[] content, String contentType) {
+        PutObjectRequest request = PutObjectRequest.builder()
+                .bucket(storageProperties.getBucket())
+                .key(key)
+                .contentType(contentType)
+                .build();
+
+        getS3Client().putObject(request, software.amazon.awssdk.core.sync.RequestBody.fromBytes(content));
+        log.info("Uploaded file: {}", key);
+    }
+
+    public void deleteFile(String key) {
+        getS3Client().deleteObject(builder -> builder
+                .bucket(storageProperties.getBucket())
+                .key(key)
+                .build());
+        log.info("Deleted file: {}", key);
+    }
+
+    public boolean fileExists(String key) {
+        try {
+            getS3Client().headObject(builder -> builder
+                    .bucket(storageProperties.getBucket())
+                    .key(key)
+                    .build());
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+}

@@ -2,48 +2,83 @@ package com.urbano.payment.entity;
 
 import com.urbano.common.enums.PaymentStatus;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
 @Table(name = "payments")
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@EntityListeners(AuditingEntityListener.class)
 public class Payment {
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "unit_id")
-    private UUID unitId;
-
-    @Column(name = "tenant_id")
+    @Column(nullable = false)
     private UUID tenantId;
 
-    @Column(name = "pm_account_id", nullable = false)
-    private UUID pmAccountId;
+    @Column(nullable = false)
+    private UUID propertyId;
 
-    @Column(precision = 19, scale = 2, nullable = false)
-    private BigDecimal amount;
+    @Column(nullable = false)
+    private UUID unitId;
 
-    @Column(name = "amount_expected", precision = 19, scale = 2)
-    private BigDecimal amountExpected;
+    @Column(nullable = false)
+    private UUID leaseId;
 
-    @Column(name = "mpesa_receipt_number", unique = true, nullable = false)
-    private String mpesaReceiptNumber;
+    @Column(nullable = false)
+    private Double amount;
+
+    private String currency;
+
+    @Column(nullable = false)
+    private String paymentMethod;
+
+    @Column(nullable = false)
+    private String referenceNumber;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private PaymentStatus status = PaymentStatus.UNMATCHED;
+    private PaymentStatus status;
 
-    @Column(name = "transaction_date", nullable = false)
+    private LocalDateTime paymentDate;
+
+    private LocalDateTime dueDate;
+
+    private String description;
+
+    private String transactionId;
+
+    private String paymentGateway;
+
+    @Column(nullable = false)
+    private boolean isReconciled;
+
+    private LocalDateTime reconciledAt;
+
+    // M-Pesa specific fields
+    private String mpesaReceiptNumber;
+
     private LocalDateTime transactionDate;
 
-    @Column(name = "created_at")
+    private UUID pmAccountId;
+
+    @CreatedDate
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
+    @LastModifiedDate
     private LocalDateTime updatedAt;
 }

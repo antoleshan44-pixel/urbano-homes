@@ -1,41 +1,143 @@
 ﻿server:
-  port: 8080
+  port: 8090
 
 spring:
+  main:
+    web-application-type: reactive
   application:
     name: gateway
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration
   cloud:
     gateway:
+      default-filters:
+        - name: Retry
+          args:
+            retries: 3
+            statuses: SERVICE_UNAVAILABLE, INTERNAL_SERVER_ERROR
+            methods: GET,POST,PUT,PATCH,DELETE
+            backoff:
+              firstBackoff: 100ms
+              maxBackoff: 1000ms
+              factor: 2
+        - name: RequestRateLimiter
+          args:
+            key-resolver: "#{@userKeyResolver}"
+            redis-rate-limiter.replenishRate: 100
+            redis-rate-limiter.burstCapacity: 200
       routes:
+        - id: auth-public
+          uri: ${AUTH_SERVICE_URL:http://localhost:8091}
+          predicates:
+            - Path=/api/auth/login,/api/auth/register,/api/auth/refresh
+          filters:
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@ipKeyResolver}"
+                redis-rate-limiter.replenishRate: 20
+                redis-rate-limiter.burstCapacity: 30
+
         - id: auth
-          uri: http://auth-service:8081
+          uri: ${AUTH_SERVICE_URL:http://localhost:8091}
           predicates:
             - Path=/api/auth/**
+          filters:
+            - name: JwtAuthenticationFilter
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                redis-rate-limiter.replenishRate: 100
+                redis-rate-limiter.burstCapacity: 200
+
         - id: property
-          uri: http://property-service:8082
+          uri: ${PROPERTY_SERVICE_URL:http://localhost:8092}
           predicates:
             - Path=/api/properties/**,/api/units/**
+          filters:
+            - name: JwtAuthenticationFilter
+            - name: AdminBypassFilter
+
         - id: listing
-          uri: http://listing-service:8083
+          uri: ${LISTING_SERVICE_URL:http://localhost:8093}
           predicates:
             - Path=/api/public/listings/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@ipKeyResolver}"
+                redis-rate-limiter.replenishRate: 30
+                redis-rate-limiter.burstCapacity: 50
+
         - id: tenant
-          uri: http://tenant-service:8084
+          uri: ${TENANT_SERVICE_URL:http://localhost:8094}
           predicates:
             - Path=/api/tenants/**,/api/leases/**
+          filters:
+            - name: JwtAuthenticationFilter
+
+        - id: payment-callback
+          uri: ${PAYMENT_SERVICE_URL:http://localhost:8095}
+          predicates:
+            - Path=/api/payments/callback
+          filters:
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@ipKeyResolver}"
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+
         - id: payment
-          uri: http://payment-service:8085
+          uri: ${PAYMENT_SERVICE_URL:http://localhost:8095}
           predicates:
             - Path=/api/payments/**
+          filters:
+            - name: JwtAuthenticationFilter
+
         - id: maintenance
-          uri: http://maintenance-service:8086
+          uri: ${MAINTENANCE_SERVICE_URL:http://localhost:8096}
           predicates:
             - Path=/api/maintenance/**
+            - Path=/api/tenants/*/maintenance/**
+          filters:
+            - name: JwtAuthenticationFilter
+
         - id: crm
-          uri: http://crm-service:8087
+          uri: ${CRM_SERVICE_URL:http://localhost:8097}
           predicates:
             - Path=/api/crm/**
+          filters:
+            - name: JwtAuthenticationFilter
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 5000ms
 
 logging:
   level:
     com.urbano.gateway: DEBUG
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.boot.actuate: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+  health:
+    redis:
+      enabled: false
+    discovery:
+      enabled: false
+
+jwt:
+  secret: ${JWT_SECRET:default-secret-change-in-production}
